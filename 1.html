@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Login with OTP Verification</title>
+  <style>
+    body { font-family: sans-serif; background:#f2f2f2; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .container { background:#fff; padding:30px; border-radius:10px; width:350px; box-shadow:0 0 15px rgba(0,0,0,0.2); }
+    h2 { text-align:center; margin-bottom:20px; color:#333; }
+    .form-group { margin-bottom:15px; }
+    label { font-weight:bold; }
+    input { width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:5px; }
+    button { width:100%; padding:12px; background:#6c5ce7; border:none; color:white; border-radius:5px; font-weight:bold; cursor:pointer; }
+    button:hover { background:#5649c9; }
+    .otp-container { display:none; margin-top:15px; }
+    .message { margin-top:10px; text-align:center; }
+    .success { color:green; }
+    .error { color:red; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Secure Login</h2>
+
+    <div id="loginForm">
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" placeholder="07XXXXXXXX" required>
+      </div>
+      <button id="sendOtpBtn">Send OTP</button>
+    </div>
+
+    <div class="otp-container" id="otpContainer">
+      <div class="form-group">
+        <label>Enter OTP</label>
+        <input type="text" id="otpInput" maxlength="6" placeholder="Enter 6 digit OTP">
+      </div>
+      <button id="verifyOtpBtn">Verify OTP</button>
+    </div>
+
+    <div class="message" id="messageBox"></div>
+  </div>
+
+  <script>
+    let generatedOtp = "";
+
+    const sendOtpBtn = document.getElementById("sendOtpBtn");
+    const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+    const loginForm = document.getElementById("loginForm");
+    const otpContainer = document.getElementById("otpContainer");
+    const messageBox = document.getElementById("messageBox");
+
+    sendOtpBtn.addEventListener("click", async () => {
+      const phone = document.getElementById("phone").value;
+      if (!phone) {
+        messageBox.textContent = "Please enter your phone number!";
+        messageBox.className = "message error";
+        return;
+      }
+
+      sendOtpBtn.textContent = "Sending...";
+      sendOtpBtn.disabled = true;
+
+      try {
+        const response = await fetch("send_otp.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `phone=${phone}`
+        });
+        const data = await response.json();
+
+        if (data.status === "success") {
+          generatedOtp = data.otp; 
+          loginForm.style.display = "none";
+          otpContainer.style.display = "block";
+          messageBox.textContent = `OTP sent to ${phone}`;
+          messageBox.className = "message success";
+        } else {
+          messageBox.textContent = "Failed to send OTP.";
+          messageBox.className = "message error";
+        }
+      } catch (e) {
+        messageBox.textContent = "Error connecting to server!";
+        messageBox.className = "message error";
+      }
+
+      sendOtpBtn.textContent = "Send OTP";
+      sendOtpBtn.disabled = false;
+    });
+
+    verifyOtpBtn.addEventListener("click", () => {
+      const enteredOtp = document.getElementById("otpInput").value;
+
+      if (enteredOtp === generatedOtp) {
+        messageBox.textContent = "✅ OTP Verified! Logging you in...";
+        messageBox.className = "message success";
+        setTimeout(() => {
+          alert("Login Successful!");
+        }, 1500);
+      } else {
+        messageBox.textContent = "❌ Invalid OTP. Try again!";
+        messageBox.className = "message error";
+      }
+    });
+  </script>
+</body>
+</html>
